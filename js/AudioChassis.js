@@ -3,6 +3,7 @@ import WindModule from './modules/WindModule.js';
 import BinauralModule from './modules/BinauralModule.js';
 import SynthModule from './modules/SynthModule.js';
 import StringsModule from './modules/StringsModule.js';
+import AnalyserModule from './modules/AnalyzerModule.js';
 import GranularModule from './modules/GranularModule.js';
 import OrbitalModule from './modules/OrbitalModule.js';
 import StructureModule from './modules/StructureModule.js';
@@ -51,6 +52,7 @@ import VoidWhisperModule from './modules/VoidWhisperModule.js';
 import NebulaModule from './modules/NebulaModule.js';
 import ShepardModule from './modules/ShepardModule.js';
 import CelestialAlignmentModule from './modules/CelestialAlignmentModule.js';
+import RecorderModule from './modules/RecorderModule.js';
 
 export default class AudioChassis {
     constructor() {
@@ -140,6 +142,10 @@ export default class AudioChassis {
         this.masterGain = this.context.createGain();
         this.masterGain.gain.value = this.params.master;
 
+        // Analyser (Visuals Source)
+        this.analyzer = new AnalyserModule(this.context, this.masterGain);
+        this.analyser = this.analyzer; // Alias for American/British compat
+
         const preMaster = this.context.createGain();
 
         // Cartographer First (Routing)
@@ -180,6 +186,14 @@ export default class AudioChassis {
         this.tectonicModule = new TectonicModule(this.context, this.masterGain);
         this.quantumModule = new QuantumModule(this.context, this.masterGain);
         this.fractalModule = new FractalModule(this.context, this.masterGain);
+        this.nebulaModule = new NebulaModule(this.context, this.masterGain);
+        this.shepardModule = new ShepardModule(this.context, this.masterGain);
+
+        // Innovation: Celestial Alignments
+        this.celestialAlign = new CelestialAlignmentModule(this.context, this.masterGain);
+
+        // Recorder
+        this.recorderModule = new RecorderModule(this.context, this.masterGain);
         this.loFiModule = new LoFiModule(this.context, preMaster, this.masterGain);
         this.tidalRhythmModule = new TidalRhythmModule(this.context, this.masterGain);
         this.voidWhisperModule = new VoidWhisperModule(this.context, this.masterGain);
@@ -255,16 +269,24 @@ export default class AudioChassis {
 
         if (this.masterGain) this.masterGain.gain.setTargetAtTime(this.params.master, this.context.currentTime, 0.1);
 
+        // Core Environment
         if (this.rainModule) this.rainModule.update(this.params.rain);
         if (this.trafficModule) this.trafficModule.update(this.params.traffic);
         if (this.thunderModule) this.thunderModule.update(this.params.thunder);
         if (this.dropsModule) this.dropsModule.update(this.params.drops);
         if (this.fireModule) this.fireModule.update(this.params.fire || 0);
 
+        // Atmosphere
         if (this.windModule) this.windModule.update(this.params.wind);
         if (this.binauralModule) this.binauralModule.update(this.params.binaural);
+        if (this.auroraModule && this.params.aurora) this.auroraModule.update(this.params);
 
-        if (this.pulsarModule) {
+        // Utilities
+        if (this.celestialAlign) this.celestialAlign.update(this.params); // Celestial AI
+        if (this.recorderModule) {/* Recorder handles itself */ }
+
+        // Conditional Updates (Optimization)
+        if (this.pulsarModule && (this.params.pulsarDepth > 0 || this.params.pulsarRate > 0)) {
             this.pulsarModule.update({
                 bpm: this.params.bpm,
                 rate: this.params.pulsarRate,
@@ -282,11 +304,23 @@ export default class AudioChassis {
 
         if (this.reverbModule) this.reverbModule.setPreset(this.params.reverb);
         if (this.aetherModule) this.aetherModule.update(this.params);
-        if (this.celestialModule) this.celestialModule.update(this.params); // Changed from this.params.chimes
-        if (this.faunaModule) this.faunaModule.update(this.params);
+
+        // Modules with expensive processing check
+        if (this.faunaModule && this.params.life > 0) this.faunaModule.update(this.params);
         if (this.hearthModule) this.hearthModule.update(this.params);
-        if (this.tideModule) this.tideModule.update(this.params);
-        if (this.respireModule) this.respireModule.update(this.params);
+        if (this.tideModule && (this.params.rain > 0 || this.params.wind > 0)) this.tideModule.update(this.params);
+
+        // Advanced Modules
+        if (this.geologyModule) this.geologyModule.update(this.params);
+        if (this.tectonicModule) this.tectonicModule.update(this.params);
+        if (this.volcanoModule) this.volcanoModule.update(this.params);
+        if (this.biolumeModule) this.biolumeModule.update(this.params);
+
+        // Quantum / Fractal
+        if (this.quantumModule) this.quantumModule.update(this.params);
+        if (this.fractalModule) this.fractalModule.update(this.params);
+
+        // New Features (Phase 2/3)
         if (this.loFiModule) this.loFiModule.update(this.params);
         if (this.tidalRhythmModule) this.tidalRhythmModule.update(this.params);
         if (this.voidWhisperModule) this.voidWhisperModule.update(this.params);
@@ -394,9 +428,9 @@ export default class AudioChassis {
         return true;
     }
 
-    toggle() {
-        if (this.context.state === 'running') this.context.suspend();
-        else this.context.resume();
+    async toggle() {
+        if (this.context.state === 'running') await this.context.suspend();
+        else await this.context.resume();
     }
 
     transmuteGranular() {

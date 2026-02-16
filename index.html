@@ -313,8 +313,6 @@
                         <input type="range" id="param-volcano" min="0" max="1" step="0.01" value="0">
                     </div>
                 </div>
-    </div>
-
     <!-- Solar Module (New) -->
     <div class="module glass-panel">
         <div class="module-header">
@@ -1200,6 +1198,15 @@
                     <option value="field">Open Field</option>
                     <option value="hall">Concrete Hall</option>
                 </select>
+            </div>
+
+            <div class="control-group" style="margin-top: 1rem;">
+                <button id="btn-record" class="action-btn">● RECORD AUDIO</button>
+            </div>
+
+            <div class="control-group">
+                <button id="btn-force-reset" class="action-btn"
+                    style="background: #444; font-size: 0.7rem; padding: 0.5rem;">↻ RESET AUDIO ENGINE</button>
             </div>
             <div class="control-group">
                 <label>Master Gain <span class="value-readout" id="val-master">0.70</span></label>

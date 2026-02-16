@@ -55,7 +55,38 @@ export default class SkyViz {
     }
 
     draw() {
+        // Calculate Sky Color based on time
+        let bg = '#05070a';
+        let grad1 = 'rgba(20, 50, 60, 0.0)';
+        let grad2 = 'rgba(30, 40, 60, 0.0)';
+
+        if (this.time >= 5 && this.time < 8) { // Dawn
+            bg = '#1a1025';
+            grad1 = 'rgba(100, 60, 80, 0.6)';
+            grad2 = 'rgba(60, 40, 80, 0.4)';
+        } else if (this.time >= 8 && this.time < 17) { // Day
+            bg = '#4a6b7c'; // Lighter Slate Blue for Day
+            grad1 = 'rgba(100, 200, 255, 0.4)'; // Cyan Glow
+            grad2 = 'rgba(50, 150, 200, 0.3)';
+        } else if (this.time >= 17 && this.time < 20) { // Dusk
+            bg = '#2a1510';
+            grad1 = 'rgba(120, 60, 40, 0.6)';
+            grad2 = 'rgba(80, 40, 60, 0.4)';
+        }
+
+        // Clear and Fill Background
         this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // Draw Sky Background
+        this.ctx.fillStyle = bg;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Draw Gradients
+        const g = this.ctx.createRadialGradient(this.width / 2, this.height, 0, this.width / 2, this.height, this.width);
+        g.addColorStop(0, grad1);
+        g.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = g;
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
         const cx = this.width / 2;
         const cy = this.height * 0.8;

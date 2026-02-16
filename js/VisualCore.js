@@ -39,6 +39,8 @@ export default class VisualCore {
         // Container Setup
         const container = this.canvas.parentElement;
         container.style.position = 'relative';
+        // container.classList.remove('glass-panel'); // RESTORED
+        // container.style.background = '#222';
 
         // Layers Setup
         this.skyCanvas = this.createLayer(0); // Background
@@ -59,8 +61,8 @@ export default class VisualCore {
         this.canvas.style.left = '0';
         this.canvas.style.width = '100%';
         this.canvas.style.height = '100%';
-        this.canvas.style.zIndex = '3';
-        this.canvas.style.pointerEvents = 'none';
+        this.canvas.style.zIndex = '50';
+        this.canvas.style.pointerEvents = 'auto';
 
         this.fireflyCanvas = this.createLayer(4); // Fireflies
         this.sporeCanvas = this.createLayer(4); // Spores
@@ -123,7 +125,10 @@ export default class VisualCore {
         this.biome = 'forest';
 
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', () => {
+            clearTimeout(this.resizeTimer);
+            this.resizeTimer = setTimeout(() => this.resize(), 100);
+        });
 
         this.setupInteractions();
         this.setBiome('forest'); // Init state
@@ -132,6 +137,7 @@ export default class VisualCore {
     createLayer(zIndex) {
         const cnv = document.createElement('canvas');
         cnv.style.position = 'absolute';
+        cnv.style.position = 'absolute'; // CRITICAL FIX
         cnv.style.top = '0';
         cnv.style.left = '0';
         cnv.style.width = '100%';
@@ -141,6 +147,7 @@ export default class VisualCore {
 
         const container = document.getElementById('main-canvas').parentElement;
         container.appendChild(cnv);
+
         return cnv;
     }
 
@@ -234,6 +241,8 @@ export default class VisualCore {
                 c.height = rect.height;
             }
         });
+
+        console.log(`[VisualCore] Resized to ${rect.width}x${rect.height}`);
 
         if (this.skyViz) this.skyViz.resize();
         if (this.hearthViz) this.hearthViz.resize();
@@ -447,6 +456,7 @@ export default class VisualCore {
 
     animate() {
         if (!this.isRunning) return;
+        if (window.perfMonitor) window.perfMonitor.update();
         requestAnimationFrame(() => {
             try {
                 this.animate();
@@ -459,10 +469,17 @@ export default class VisualCore {
         const w = this.canvas.width;
         const h = this.canvas.height;
 
-        // Clear Main Canvas (RainViz handles its own clearing/trailing)
-        // Actually RainViz expects to draw on top of a cleared or trailed canvas
-        this.ctx.fillStyle = 'rgba(5, 7, 10, 0.3)'; // Trail effect
-        this.ctx.fillRect(0, 0, w, h);
+        // Clear Main Canvas
+        // this.ctx.fillStyle = 'rgba(5, 7, 10, 0.3)'; // Trail effect
+        // this.ctx.fillRect(0, 0, w, h);
+        this.ctx.clearRect(0, 0, w, h);
+
+
+        // DEBUG: Log once per 100 frames
+        // if (Math.random() < 0.01) {
+        //     const canvases = document.querySelectorAll('.viz-container canvas');
+        //     console.log(`[VisualCore] Canvases: ${canvases.length}, MainZ: ${this.canvas.style.zIndex}, W: ${w}, H: ${h}`);
+        // }
 
         // Draw Layers
         if (this.skyViz) this.skyViz.draw();
@@ -533,6 +550,11 @@ export default class VisualCore {
 
         if (this.rainViz) this.rainViz.draw(); // On Main
 
+        if (this.auroraViz && (this.audio && this.audio.params.aurora > 0.01)) {
+            this.auroraViz.update(this.timeOfDay);
+            this.auroraViz.draw();
+        }
+
         if (this.fireflyViz) {
             this.fireflyViz.update(this.timeOfDay);
             this.fireflyViz.draw();
@@ -569,8 +591,13 @@ export default class VisualCore {
         if (this.spectrumViz) this.spectrumViz.draw();
         if (this.geosminViz) this.geosminViz.draw();
 
+        if (this.auroraViz && (this.audio && this.audio.params.aurora > 0.01)) {
+            this.auroraViz.update(this.timeOfDay);
+            this.auroraViz.draw();
+        }
+
         // Quantum Mirage Overlay (Post-processing)
-        if (this.mirageViz) {
+        if (this.mirageViz && (this.audio && (this.audio.params.entropy > 0.01 || this.audio.params.quantumFlux > 0.01))) {
             this.mirageViz.update({
                 entropy: this.audio ? this.audio.params.entropy : 0.5,
                 flux: this.audio ? this.audio.params.quantumFlux : 0.1
@@ -579,18 +606,17 @@ export default class VisualCore {
         }
 
         // Fractal Echo (Geometric Recursion)
-        if (this.fractalViz) {
+        if (this.fractalViz && (this.audio && this.audio.params.recursion > 0.01)) {
             this.fractalViz.update({
                 recursion: this.audio ? this.audio.params.recursion : 0.1,
                 symmetry: this.audio ? this.audio.params.symmetry : 0.5,
-                divergence: this.audio ? this.audio.params.quantumFlux : 0.1 // Use quantum flux as a jitter source or dedicated param
+                divergence: this.audio ? this.audio.params.quantumFlux : 0.1
             });
             this.fractalViz.draw(this.ctx);
         }
 
-        // Celestial Overlays
-        if (this.audio && this.audio.celestialModule) {
-            const celestial = this.audio.celestialModule.getVisualParams();
+        if (this.audio && this.audio.celestialAlign) {
+            const celestial = this.audio.celestialAlign.getVisualParams();
             if (celestial && celestial.intensity > 0) {
                 this.ctx.save();
                 this.ctx.globalCompositeOperation = 'screen';

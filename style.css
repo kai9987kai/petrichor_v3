@@ -395,6 +395,7 @@ select {
     position: relative;
     padding: 0;
     overflow: hidden;
+    min-height: 500px;
 }
 
 canvas {

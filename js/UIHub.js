@@ -85,6 +85,7 @@ export default class UIHub {
         };
 
         this.attachListeners();
+        this.attachGlobalControls();
 
         // Status Polling
         setInterval(() => this.updateStatus(), 1000);
@@ -92,9 +93,9 @@ export default class UIHub {
 
     updateStatus() {
         const el = document.getElementById('celestial-status');
-        if (!el || !this.audio || !this.audio.celestialModule) return;
+        if (!el || !this.audio || !this.audio.celestialAlign) return;
 
-        const event = this.audio.celestialModule.currentEvent;
+        const event = this.audio.celestialAlign.currentEvent;
         if (event) {
             el.textContent = `⚠ ${event.type.replace('_', ' ')} ACTIVE ⚠`;
             el.style.opacity = '1';
@@ -111,11 +112,14 @@ export default class UIHub {
         this.elements.powerBtn.addEventListener('click', async () => {
             if (!this.initialized) {
                 await this.audio.init();
+                if (this.audio.context.state === 'suspended') {
+                    await this.audio.context.resume();
+                }
                 this.visual.start();
                 this.initialized = true;
                 this.setPowerState(true);
             } else {
-                this.audio.toggle();
+                await this.audio.toggle(); // Make toggle async and await it
                 const isRunning = this.audio.context.state === 'running';
                 this.setPowerState(isRunning);
                 if (!isRunning) this.visual.stop();
@@ -1406,5 +1410,35 @@ export default class UIHub {
             this.audio.setParam(param, on);
             if (this.visual.updateVizParams) this.visual.updateVizParams();
         });
+    }
+
+    attachGlobalControls() {
+        // Recorder
+        const btnRecord = document.getElementById('btn-record');
+        if (btnRecord) {
+            btnRecord.addEventListener('click', () => {
+                const isRecording = btnRecord.classList.contains('recording');
+                if (!isRecording) {
+                    if (this.audio.startRecording()) {
+                        btnRecord.classList.add('recording');
+                        btnRecord.textContent = '■ STOP RECORDING';
+                    }
+                } else {
+                    this.audio.stopRecording();
+                    btnRecord.classList.remove('recording');
+                    btnRecord.textContent = '● RECORD AUDIO';
+                }
+            });
+        }
+
+        // Force Reset
+        const btnReset = document.getElementById('btn-force-reset');
+        if (btnReset) {
+            btnReset.addEventListener('click', () => {
+                if (confirm('Restart Audio Engine? This will stop playback.')) {
+                    window.location.reload();
+                }
+            });
+        }
     }
 }
