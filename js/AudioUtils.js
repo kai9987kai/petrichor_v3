@@ -50,6 +50,8 @@ export default class AudioUtils {
                 b5 = -0.7616 * b5 - white * 0.0168980;
                 data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
                 data[i] *= 0.11; // Normalize roughly
+                if (isNaN(data[i])) data[i] = 0;
+                if (Math.abs(data[i]) > 1) data[i] /= Math.abs(data[i]);
                 b6 = white * 0.115926;
             }
         }

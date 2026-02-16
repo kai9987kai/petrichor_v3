@@ -134,7 +134,7 @@ export default class FaunaModule {
         filter.type = 'bandpass';
         filter.Q.value = 5;
         filter.frequency.setValueAtTime(600, t);
-        filter.frequency.linearRampToValueAtTime(1200, t + 0.1); // Formant sweep "Ribbit"
+        filter.frequency.setTargetAtTime(1200, t, 0.1); // SmootherArticulated sweep
 
         osc.connect(filter);
         filter.connect(gain);

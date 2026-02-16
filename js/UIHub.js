@@ -85,6 +85,25 @@ export default class UIHub {
         };
 
         this.attachListeners();
+
+        // Status Polling
+        setInterval(() => this.updateStatus(), 1000);
+    }
+
+    updateStatus() {
+        const el = document.getElementById('celestial-status');
+        if (!el || !this.audio || !this.audio.celestialModule) return;
+
+        const event = this.audio.celestialModule.currentEvent;
+        if (event) {
+            el.textContent = `⚠ ${event.type.replace('_', ' ')} ACTIVE ⚠`;
+            el.style.opacity = '1';
+        } else {
+            // Show next event ETA? Or just clear.
+            const next = Math.ceil(this.audio.celestialModule.nextEventTime - this.audio.context.currentTime);
+            if (next < 10) el.textContent = `ALIGNMENT IMMINENT: ${next}s`;
+            else el.textContent = '';
+        }
     }
 
     attachListeners() {
@@ -152,13 +171,7 @@ export default class UIHub {
             btns.city.addEventListener('click', () => updateBiome('city'));
         }
 
-        // Aurora Toggle
-        if (document.getElementById('btn-aurora')) {
-            document.getElementById('btn-aurora').addEventListener('click', () => {
-                const isActive = document.getElementById('btn-aurora').classList.toggle('active');
-                this.audio.setParam('aurora', isActive);
-            });
-        }
+        // Aurora toggle is handled in Cosmos Controls below (line ~255)
 
         // Hearth Toggle
         if (this.elements.btnHearth) {
@@ -228,7 +241,7 @@ export default class UIHub {
             rangeRadio.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 this.audio.setParam('tuning', val);
-                dispRadio.textContent = val.toFixed(1);
+                if (dispRadio) dispRadio.textContent = val.toFixed(1);
             });
         }
 
@@ -822,7 +835,7 @@ export default class UIHub {
                 const cx = w / 2;
                 const cy = h / 2;
 
-                const macro = this.audio.params.macroX;
+                const macro = this.audio.params.macroX || 0;
 
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, w, h);
@@ -1129,40 +1142,92 @@ export default class UIHub {
         this.bindSlider(this.elements.master, 'master', this.elements.valMaster);
         this.bindSlider(this.elements.vox, 'vox', this.elements.valVox);
 
+        // Quantum Mirage (Phase 50)
+        this.bindSlider(document.getElementById('param-entropy'), 'entropy', document.getElementById('val-entropy'));
+        this.bindSlider(document.getElementById('param-displacement'), 'displacement', document.getElementById('val-displacement'));
+        this.bindSlider(document.getElementById('param-quantumFlux'), 'quantumFlux', document.getElementById('val-quantumFlux'));
+
+        // Fractal Echo (Phase 51)
+        this.bindSlider(document.getElementById('param-recursion'), 'recursion', document.getElementById('val-recursion'));
+        this.bindSlider(document.getElementById('param-symmetry2'), 'symmetry', document.getElementById('val-symmetry2'));
+        this.bindSlider(document.getElementById('param-divergence'), 'divergence', document.getElementById('val-divergence'));
+
+        // Tidal Rhythm (MOD-60)
+        this.bindSlider(document.getElementById('param-tidal'), 'tidal', document.getElementById('val-tidal'));
+
+        // Tidal Viz Canvas
+        const tidalCanvas = document.getElementById('tidal-viz');
+        if (tidalCanvas) {
+            const ctx = tidalCanvas.getContext('2d');
+            const animateTidal = () => {
+                const w = tidalCanvas.width = tidalCanvas.clientWidth;
+                const h = tidalCanvas.height = tidalCanvas.clientHeight;
+                const cx = w / 2;
+                const cy = h / 2;
+                const tidal = this.audio.params.tidal || 0;
+
+                ctx.fillStyle = 'rgba(0, 10, 20, 0.2)';
+                ctx.fillRect(0, 0, w, h);
+
+                if (tidal > 0.01) {
+                    const now = Date.now() / 1000;
+                    const tidalPhase = (Math.sin(now * Math.PI * 2 / 12) + 1) * 0.5;
+
+                    // Concentric rings
+                    for (let i = 0; i < 5; i++) {
+                        const r = ((now * 30 + i * 40) % (Math.max(w, h) * 0.6));
+                        const alpha = (1 - r / (Math.max(w, h) * 0.6)) * tidal * 0.6;
+                        if (alpha > 0) {
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                            ctx.strokeStyle = `rgba(0, ${150 + tidalPhase * 100}, 255, ${alpha})`;
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Center glow
+                    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 25 + tidalPhase * 15);
+                    grd.addColorStop(0, `rgba(0, 200, 255, ${0.3 * tidal * tidalPhase})`);
+                    grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(0, 0, w, h);
+                }
+
+                requestAnimationFrame(animateTidal);
+            };
+            animateTidal();
+        }
+
+        // Void Whisper (MOD-61)
+        this.bindSlider(document.getElementById('param-voidWhisper'), 'voidWhisper', document.getElementById('val-voidWhisper'));
+
+        // Nebula Cloud (MOD-62)
+        this.bindSlider(document.getElementById('param-nebula'), 'nebula', document.getElementById('val-nebula'));
+        this.bindSlider(document.getElementById('param-nebulaDensity'), 'nebulaDensity', document.getElementById('val-nebulaDensity'));
+        this.bindSlider(document.getElementById('param-nebulaShimmer'), 'nebulaShimmer', document.getElementById('val-nebulaShimmer'));
+
+        // Shepard Engine (MOD-63)
+        this.bindSlider(document.getElementById('param-shepard'), 'shepard', document.getElementById('val-shepard'));
+        this.bindSlider(document.getElementById('param-shepardSpeed'), 'shepardSpeed', document.getElementById('val-shepardSpeed'));
+
+        const btnShepardRise = document.getElementById('btn-shepard-rise');
+        const btnShepardFall = document.getElementById('btn-shepard-fall');
+        if (btnShepardRise && btnShepardFall) {
+            btnShepardRise.addEventListener('click', () => {
+                this.audio.setParam('shepardDirection', 1);
+                btnShepardRise.classList.add('active');
+                btnShepardFall.classList.remove('active');
+            });
+            btnShepardFall.addEventListener('click', () => {
+                this.audio.setParam('shepardDirection', 0);
+                btnShepardFall.classList.add('active');
+                btnShepardRise.classList.remove('active');
+            });
+        }
+
         // Populate Presets
         this.refreshPresets();
-
-        // Preset Listeners
-        if (this.elements.btnLoad) {
-            this.elements.btnLoad.addEventListener('click', () => {
-                const name = this.elements.presetSelect.value;
-                if (name) {
-                    const p = this.presets.applyPreset(name);
-                    this.syncUI(p);
-                    // Visual updates
-                    if (this.visual.botanyModule) {
-                        if (p.garden) this.visual.botanyModule.setPlants(p.garden);
-                        else this.visual.botanyModule.clear();
-                    }
-                    this.visual.setRainIntensity(p.rain);
-                    this.visual.setWindSpeed(p.wind);
-                    this.visual.setTimeOfDay(p.time);
-                    this.visual.setBreathActive(!!p.respire);
-
-                    if (this.elements.respireBtn) {
-                        const isActive = !!p.respire;
-                        this.elements.respireBtn.classList.toggle('active', isActive);
-                        this.elements.respireBtn.textContent = isActive ? 'ON' : 'OFF';
-                    }
-                }
-            });
-        }
-
-        if (this.elements.btnSave) {
-            this.elements.btnSave.addEventListener('click', () => {
-                this.handleSavePreset();
-            });
-        }
 
         // Focus Listeners
         if (this.elements.btnFocusStart) {
@@ -1190,8 +1255,10 @@ export default class UIHub {
         window.addEventListener('focus-restore', (e) => this.syncUI(e.detail));
         window.addEventListener('focus-stop', () => {
             if (this.elements.focusDisplay) this.elements.focusDisplay.textContent = "25:00";
-            if (this.elements.focusStatus) this.elements.focusStatus.textContent = "IDLE";
-            this.elements.focusStatus.className = 'status-text';
+            if (this.elements.focusStatus) {
+                this.elements.focusStatus.textContent = "IDLE";
+                this.elements.focusStatus.className = 'status-text';
+            }
         });
 
         // Selects
@@ -1232,15 +1299,17 @@ export default class UIHub {
     }
 
     refreshPresets() {
-        if (!this.elements.presetSelect) return;
-        this.elements.presetSelect.innerHTML = '<option value="" disabled selected>Select Preset...</option>';
-        const names = this.presets.getNames();
-        names.forEach(n => {
-            const opt = document.createElement('option');
-            opt.value = n;
-            opt.textContent = n;
-            this.elements.presetSelect.appendChild(opt);
-        });
+        // Use the preset grid from Archive module or select dropdown
+        const selectMood = document.getElementById('select-mood');
+        if (!selectMood) return;
+        // Presets handled via Archive module / Oracle system
+    }
+
+    handleSavePreset() {
+        const name = prompt('Enter preset name:');
+        if (!name || !name.trim()) return;
+        this.presetManager.savePreset(name.trim(), this.audio.params);
+        console.log(`Preset '${name.trim()}' saved.`);
     }
 
     syncUI(p) {

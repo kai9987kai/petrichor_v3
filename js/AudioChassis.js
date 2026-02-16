@@ -42,8 +42,15 @@ import SolarModule from './modules/SolarModule.js';
 import AuroraModule from './modules/AuroraModule.js';
 import MagneticModule from './modules/MagneticModule.js';
 import TectonicModule from './modules/TectonicModule.js';
+import QuantumModule from './modules/QuantumModule.js';
+import FractalModule from './modules/FractalModule.js';
 import PollinatorModule from './modules/PollinatorModule.js';
 import BotanyModule from './modules/BotanyModule.js';
+import TidalRhythmModule from './modules/TidalRhythmModule.js';
+import VoidWhisperModule from './modules/VoidWhisperModule.js';
+import NebulaModule from './modules/NebulaModule.js';
+import ShepardModule from './modules/ShepardModule.js';
+import CelestialAlignmentModule from './modules/CelestialAlignmentModule.js';
 
 export default class AudioChassis {
     constructor() {
@@ -102,7 +109,26 @@ export default class AudioChassis {
             magneticFlux: 0,
             fluxToggle: false,
             tectonicStress: 0,
-            tectonicGrowth: 0.1
+            tectonicGrowth: 0.1,
+            entropy: 0.5,
+            displacement: 0.3,
+            quantumFlux: 0.1,
+            recursion: 0.1,
+            symmetry: 0.5,
+            divergence: 0.1,
+            macroX: 0.5,
+            macroNature: false,
+            macroSynth: false,
+            macroVoid: false,
+            tidal: 0,
+            voidWhisper: 0,
+            nebula: 0,
+            nebulaDensity: 0.5,
+            nebulaShimmer: 0.5,
+            shepard: 0,
+            shepardSpeed: 0.5,
+            shepardDirection: 1,
+            shepardMode: 'shepard'
         };
     }
 
@@ -152,6 +178,22 @@ export default class AudioChassis {
         this.auroraModule = new AuroraModule(this.context, natureOut);
         this.magneticModule = new MagneticModule(this.context, this.masterGain);
         this.tectonicModule = new TectonicModule(this.context, this.masterGain);
+        this.quantumModule = new QuantumModule(this.context, this.masterGain);
+        this.fractalModule = new FractalModule(this.context, this.masterGain);
+        this.loFiModule = new LoFiModule(this.context, preMaster, this.masterGain);
+        this.tidalRhythmModule = new TidalRhythmModule(this.context, this.masterGain);
+        this.voidWhisperModule = new VoidWhisperModule(this.context, this.masterGain);
+        this.nebulaModule = new NebulaModule(this.context, this.masterGain);
+        this.shepardModule = new ShepardModule(this.context, this.masterGain);
+
+        // Entanglement & Recursion: 
+        // Route Aether to Quantum, and Quantum/Synth to Fractal
+        this.aetherModule.output.connect(this.quantumModule.input);
+        this.quantumModule.output.connect(this.fractalModule.input);
+        this.synthModule.output.connect(this.fractalModule.input);
+        this.recorderDest = this.context.createMediaStreamDestination();
+        this.masterGain.connect(this.recorderDest);
+
         this.typewriterModule = new TypewriterModule(this.context, preMaster);
         this.radioModule = new RadioModule(this.context, preMaster);
         this.structureModule = new StructureModule(this.context, preMaster);
@@ -186,12 +228,14 @@ export default class AudioChassis {
         this.micModule = new MicModule(this.context, preMaster);
         this.botanyModule = new BotanyModule(this.context, natureOut);
         this.pollinatorModule = new PollinatorModule(this.context, natureOut);
+        this.respireModule = new RespireModule(this.context, preMaster, preMaster);
 
         // Pulsar (Master -> Destination)
         this.pulsarModule = new PulsarModule(this.context, this.masterGain, this.context.destination);
 
         // Analyzer
         this.analyzer = new AnalyzerModule(this.context, this.pulsarModule.output);
+        this.analyser = this.analyzer; // British spelling alias for VisualCore
         this.analyzer.connect(this.context.destination);
 
         this.focusModule = new FocusModule(this);
@@ -238,11 +282,16 @@ export default class AudioChassis {
 
         if (this.reverbModule) this.reverbModule.setPreset(this.params.reverb);
         if (this.aetherModule) this.aetherModule.update(this.params);
-        if (this.celestialModule) this.celestialModule.update(this.params.chimes);
+        if (this.celestialModule) this.celestialModule.update(this.params); // Changed from this.params.chimes
         if (this.faunaModule) this.faunaModule.update(this.params);
         if (this.hearthModule) this.hearthModule.update(this.params);
         if (this.tideModule) this.tideModule.update(this.params);
-        if (this.respireModule) this.respireModule.setActive(this.params.respire);
+        if (this.respireModule) this.respireModule.update(this.params);
+        if (this.loFiModule) this.loFiModule.update(this.params);
+        if (this.tidalRhythmModule) this.tidalRhythmModule.update(this.params);
+        if (this.voidWhisperModule) this.voidWhisperModule.update(this.params);
+        if (this.nebulaModule) this.nebulaModule.update(this.params);
+        if (this.shepardModule) this.shepardModule.update(this.params);
 
         if (this.typewriterModule) this.typewriterModule.setActive(this.params.typewriter);
         if (this.radioModule) {
@@ -277,6 +326,21 @@ export default class AudioChassis {
         if (this.auroraModule) this.auroraModule.update(this.params);
         if (this.magneticModule) this.magneticModule.update(this.params);
         if (this.tectonicModule) this.tectonicModule.update(this.params);
+        if (this.quantumModule) {
+            this.quantumModule.update({
+                entropy: this.params.entropy,
+                displacement: this.params.displacement,
+                flux: this.params.quantumFlux
+            });
+        }
+
+        if (this.fractalModule) {
+            this.fractalModule.update({
+                recursion: this.params.recursion,
+                symmetry: this.params.symmetry,
+                divergence: this.params.divergence
+            });
+        }
         if (this.weatherModule) {
             this.weatherModule.update(this.params);
             const synergy = this.weatherModule.getSynergyTargets();
@@ -297,9 +361,50 @@ export default class AudioChassis {
         if (this.dropsModule) this.dropsModule.setSurface(type);
     }
 
+    setBinauralMode(mode) {
+        this.params.binauralMode = mode;
+        if (this.binauralModule) this.binauralModule.setMode(mode);
+    }
+
+    setReverb(preset) {
+        this.params.reverb = preset;
+        if (this.reverbModule) this.reverbModule.setPreset(preset);
+    }
+
+    toggleRecording(onStop) {
+        if (this.recorder && this.recorder.state === 'recording') {
+            this.recorder.stop();
+            return false;
+        }
+
+        const chunks = [];
+        this.recorder = new MediaRecorder(this.recorderDest.stream);
+        this.recorder.ondataavailable = e => chunks.push(e.data);
+        this.recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `petrichor_${Date.now()}.ogg`;
+            a.click();
+            if (onStop) onStop();
+        };
+
+        this.recorder.start();
+        return true;
+    }
+
     toggle() {
         if (this.context.state === 'running') this.context.suspend();
         else this.context.resume();
+    }
+
+    transmuteGranular() {
+        if (this.granularModule) this.granularModule.transmute();
+    }
+
+    strikeStructure() {
+        if (this.structureModule) this.structureModule.strike();
     }
 
     setState(state) {

@@ -66,9 +66,18 @@ export default class ChronosModule {
         // Structure: Noise -> Filter -> VCA (modulated by LFO) -> Out
 
         const cicadaVCA = this.ctx.createGain();
-        cicadaVCA.gain.value = 0; // Base level controlled by LFO
+        cicadaVCA.gain.value = 0;
 
-        buzzLFO.connect(cicadaVCA.gain); // This might need offset to stay positive
+        // Add 1.0 DC offset to ensure LFO (sine) stays in 0..1 range
+        const dcOffset = this.ctx.createConstantSource();
+        dcOffset.offset.value = 1.0;
+        dcOffset.start();
+
+        const lfoSum = this.ctx.createGain();
+        buzzLFO.connect(lfoSum);
+        dcOffset.connect(lfoSum);
+
+        lfoSum.connect(cicadaVCA.gain);
 
         // Actually simpler: Just standard gain node for output
         this.cicadasGain = this.ctx.createGain();

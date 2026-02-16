@@ -49,29 +49,33 @@ export default class SkyViz {
     update(params) {
         this.width = this.canvas.width;
         this.height = this.canvas.height;
-        this.time = params.time || 12;
-        this.rain = params.rain || 0;
-        this.wind = params.wind || 0;
+        this.time = params.time !== undefined ? params.time : this.time;
+        this.rain = params.rain !== undefined ? params.rain : this.rain;
+        this.wind = params.wind !== undefined ? params.wind : this.wind;
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
 
         const cx = this.width / 2;
         const cy = this.height * 0.8;
         const radius = this.width * 0.6;
 
-        // Day/Night Progress
-        // 06:00 -> 18:00 (Sun)
+        // Day/Night Progress: Sun
         let dayProgress = (this.time - 6) / 12;
         if (dayProgress >= 0 && dayProgress <= 1) {
             const angle = Math.PI + (dayProgress * Math.PI);
             const sunX = cx + Math.cos(angle) * radius * 0.8;
             const sunY = cy + Math.sin(angle) * (radius * 0.4);
 
+            this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
             this.ctx.fillStyle = '#ffaa00';
             this.ctx.shadowBlur = 40;
             this.ctx.shadowColor = '#ffaa00';
             this.ctx.fill();
-            this.ctx.shadowBlur = 0;
+            this.ctx.restore();
         }
 
         // Moon: 18:00 -> 06:00
@@ -84,21 +88,16 @@ export default class SkyViz {
             const moonX = cx + Math.cos(angle) * radius * 0.8;
             const moonY = cy + Math.sin(angle) * (radius * 0.4);
 
+            this.ctx.save();
             this.ctx.beginPath();
             this.ctx.arc(moonX, moonY, 25, 0, Math.PI * 2);
             this.ctx.fillStyle = '#eeffff';
             this.ctx.shadowBlur = 20;
             this.ctx.shadowColor = '#ffffff';
             this.ctx.fill();
-            this.ctx.shadowBlur = 0;
+            this.ctx.restore();
         }
 
-        this.drawStars();
-        this.drawMeteors();
-    }
-
-    draw() {
-        this.ctx.clearRect(0, 0, this.width, this.height);
         this.drawStars();
         this.drawMeteors();
     }

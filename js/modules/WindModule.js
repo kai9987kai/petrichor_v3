@@ -29,7 +29,7 @@ export default class WindModule {
         // 2. Modulated Filter (Bandpass)
         this.filter = this.ctx.createBiquadFilter();
         this.filter.type = 'lowpass';
-        this.filter.frequency.value = 400;
+        this.filter.frequency.setValueAtTime(400, t);
         this.filter.Q.value = 0.5;
 
         // 3. LFO for "Gusts"
@@ -66,7 +66,7 @@ export default class WindModule {
             // Gain: Scale volume
             this.gain.gain.setTargetAtTime(this.params.wind * 0.4, t, 0.2);
 
-            // Filter Base Freq: Windier = Higher pitch whistle
+            // Filter Base Freq: Windier = Higher pitch whistle. Minimum 200Hz.
             const baseFreq = 200 + (this.params.wind * 600);
             this.filter.frequency.setTargetAtTime(baseFreq, t, 0.2);
 
@@ -78,8 +78,11 @@ export default class WindModule {
             const lfoRate = 0.1 + (this.params.wind * 0.8);
             this.lfo.frequency.setTargetAtTime(lfoRate, t, 0.5);
 
-            // LFO Depth: Windier = More variation
-            this.lfoGain.gain.setTargetAtTime(200 + (this.params.wind * 400), t, 0.5);
+            // LFO Depth: Windier = More variation. 
+            // Clamp so baseFreq - lfoDepth is never <= 20Hz
+            const maxLfoDepth = Math.max(0, baseFreq - 20);
+            const targetLfoDepth = 200 + (this.params.wind * 400);
+            this.lfoGain.gain.setTargetAtTime(Math.min(targetLfoDepth, maxLfoDepth), t, 0.5);
         }
     }
 }

@@ -35,7 +35,7 @@ export default class AetherModule {
         this.lfo.frequency.value = 0.1; // 10s cycle
 
         const lfoGain = this.ctx.createGain();
-        lfoGain.gain.value = 200; // Sweep +/- 200Hz
+        lfoGain.gain.value = 150; // Reduced sweep to stay safe from 0Hz
 
         this.lfo.connect(lfoGain);
         lfoGain.connect(this.filter.frequency);
@@ -74,8 +74,8 @@ export default class AetherModule {
         this.masterGain.gain.setTargetAtTime(this.params.harmony * 0.4, t, 0.5);
 
         // Filter Cutoff (Space)
-        // Map 0-1 to 200Hz - 2000Hz
-        const cutoff = 200 + this.params.space * 1800;
+        // Map 0-1 to 300Hz - 2100Hz (Safety floor 300 > LFO 150)
+        const cutoff = 300 + this.params.space * 1800;
         this.filter.frequency.setTargetAtTime(cutoff, t, 0.5);
     }
 }

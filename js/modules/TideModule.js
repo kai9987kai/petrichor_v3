@@ -28,12 +28,13 @@ export default class TideModule {
 
             // Pressure modulates LFO frequency (choppier waters in low pressure)
             // 0.0 -> 0.4Hz, 1.0 -> 0.05Hz
+            // 0.0 -> 0.4Hz, 1.0 -> 0.05Hz
             const lfoFreq = 0.4 - (pressure * 0.35);
             this.node.lfo.frequency.setTargetAtTime(lfoFreq, t, 1.0);
 
             // Pressure modulates Filter Mod Depth (Storm surge)
-            // 0.0 -> 1200Hz, 1.0 -> 300Hz
-            const modDepth = 1200 - (pressure * 900);
+            // Clamp so baseFreq (800) - modDepth is always > 150Hz
+            const modDepth = Math.min(650, 1200 - (pressure * 900));
             this.node.lfoGain.gain.setTargetAtTime(modDepth, t, 1.0);
 
             // Salt-Spray Logic (High frequency hiss on surges)
@@ -62,7 +63,7 @@ export default class TideModule {
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 400;
+        filter.frequency.setValueAtTime(800, t);
         filter.Q.value = 0.5;
 
         const sprayFilter = this.ctx.createBiquadFilter();

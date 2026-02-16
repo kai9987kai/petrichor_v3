@@ -24,6 +24,8 @@ import SolarViz from './viz/SolarViz.js';
 import AuroraViz from './viz/AuroraViz.js';
 import MagneticViz from './viz/MagneticViz.js';
 import TectonicViz from './viz/TectonicViz.js';
+import MirageViz from './viz/MirageViz.js';
+import FractalViz from './viz/FractalViz.js';
 
 /**
  * VisualCore.js
@@ -89,8 +91,8 @@ export default class VisualCore {
         this.rainViz = new RainViz(this.ctx, this.canvas.width, this.canvas.height);
         this.fireflyViz = new FireflyViz(this.fireflyCanvas);
         this.faunaViz = new FaunaViz(this.faunaCanvas);
-        this.kaleidoscopeViz = new KaleidoscopeViz(this.kaleidoscopeCanvas, this.audio.analyser);
-        this.zenithViz = new ZenithViz(this.zenithCanvas, this.audio.analyser);
+        this.kaleidoscopeViz = new KaleidoscopeViz(this.kaleidoscopeCanvas, null);
+        this.zenithViz = new ZenithViz(this.zenithCanvas, null);
         this.breathViz = new BreathViz(this.hudCanvas);
         this.sporeViz = new SporeViz(this.sporeCanvas);
         this.pollinatorViz = new PollinatorViz(this.pollinatorCanvas);
@@ -103,8 +105,8 @@ export default class VisualCore {
         this.tectonicViz = new TectonicViz(this.tectonicCanvas);
         this.magneticViz = new MagneticViz(this.magneticCanvas);
 
-        this.botanyModule = this.audio.botanyModule;
-        this.pollinatorModule = this.audio.pollinatorModule;
+        this.botanyModule = null;
+        this.pollinatorModule = null;
 
         this.spectrumViz = null;
         this.geosminViz = null;
@@ -166,16 +168,30 @@ export default class VisualCore {
     }
 
     initSecondaryViz() {
+        // Wire up audio-dependent refs now that AudioChassis is initialized
+        this.botanyModule = this.audio.botanyModule || null;
+        this.pollinatorModule = this.audio.pollinatorModule || null;
+
+        // Update kaleidoscope/zenith with native analyser node
+        const nativeAnalyser = this.audio.analyser ? this.audio.analyser.node : null;
+        if (nativeAnalyser) {
+            if (this.kaleidoscopeViz) this.kaleidoscopeViz.analyser = nativeAnalyser;
+            if (this.zenithViz) this.zenithViz.analyser = nativeAnalyser;
+        }
+
         const specCanvas = document.getElementById('spectrum-canvas');
         const geoCanvas = document.getElementById('geo-canvas');
 
-        if (specCanvas && this.audio.analyser) {
-            this.spectrumViz = new SpectrumViz(specCanvas, this.audio.analyser);
+        if (specCanvas && nativeAnalyser) {
+            this.spectrumViz = new SpectrumViz(specCanvas, nativeAnalyser);
         }
 
         if (geoCanvas) {
             this.geosminViz = new GeosminViz(geoCanvas);
         }
+
+        this.mirageViz = new MirageViz(this.canvas, this.audio);
+        this.fractalViz = new FractalViz(this.canvas, this.audio);
     }
 
     setupInteractions() {
@@ -212,7 +228,7 @@ export default class VisualCore {
         const rect = this.canvas.parentElement.getBoundingClientRect();
 
         // Resize all layers
-        [this.canvas, this.skyCanvas, this.hearthCanvas, this.natureCanvas, this.oceanCanvas, this.cityCanvas, this.groundCanvas, this.fireflyCanvas, this.hudCanvas, this.zenithCanvas].forEach(c => {
+        [this.canvas, this.skyCanvas, this.hearthCanvas, this.natureCanvas, this.oceanCanvas, this.cityCanvas, this.groundCanvas, this.fireflyCanvas, this.hudCanvas, this.zenithCanvas, this.sporeCanvas, this.pollinatorCanvas, this.faunaCanvas, this.cloudCanvas, this.geologyCanvas, this.reefCanvas, this.volcanoCanvas, this.solarCanvas, this.auroraCanvas, this.tectonicCanvas, this.magneticCanvas, this.kaleidoscopeCanvas].forEach(c => {
             if (c) {
                 c.width = rect.width;
                 c.height = rect.height;
@@ -231,15 +247,37 @@ export default class VisualCore {
         if (this.kaleidoscopeViz) this.kaleidoscopeViz.resize();
         if (this.zenithViz) this.zenithViz.resize();
         if (this.breathViz) this.breathViz.resize();
+        if (this.sporeViz && this.sporeViz.resize) this.sporeViz.resize();
+        if (this.pollinatorViz && this.pollinatorViz.resize) this.pollinatorViz.resize();
+        if (this.cloudViz && this.cloudViz.resize) this.cloudViz.resize();
+        if (this.geologyViz && this.geologyViz.resize) this.geologyViz.resize();
+        if (this.reefViz && this.reefViz.resize) this.reefViz.resize();
+        if (this.volcanoViz && this.volcanoViz.resize) this.volcanoViz.resize();
+        if (this.solarViz && this.solarViz.resize) this.solarViz.resize();
+        if (this.auroraViz && this.auroraViz.resize) this.auroraViz.resize();
+        if (this.tectonicViz && this.tectonicViz.resize) this.tectonicViz.resize();
+        if (this.magneticViz && this.magneticViz.resize) this.magneticViz.resize();
+        if (this.mirageViz && this.mirageViz.resize) this.mirageViz.resize();
+        if (this.fractalViz && this.fractalViz.resize) this.fractalViz.resize();
 
         if (this.spectrumViz) this.spectrumViz.resize();
         if (this.geosminViz) this.geosminViz.resize();
     }
 
     start() {
-        // Re-check analyzer if missed
         if (!this.spectrumViz && this.audio.analyser) {
             this.initSecondaryViz();
+        }
+
+        // Fresh module references from AudioChassis
+        this.botanyModule = this.audio.botanyModule;
+        this.pollinatorModule = this.audio.pollinatorModule;
+        this.quantumModule = this.audio.quantumModule;
+
+        if (this.audio.analyser) {
+            const nativeAnalyser = this.audio.analyser.node;
+            if (this.kaleidoscopeViz) this.kaleidoscopeViz.analyser = nativeAnalyser;
+            if (this.zenithViz) this.zenithViz.analyser = nativeAnalyser;
         }
 
         this.isRunning = true;
@@ -409,7 +447,14 @@ export default class VisualCore {
 
     animate() {
         if (!this.isRunning) return;
-        requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(() => {
+            try {
+                this.animate();
+            } catch (e) {
+                console.error("VisualCore Animation Error:", e);
+                this.stop();
+            }
+        });
 
         const w = this.canvas.width;
         const h = this.canvas.height;
@@ -523,5 +568,48 @@ export default class VisualCore {
 
         if (this.spectrumViz) this.spectrumViz.draw();
         if (this.geosminViz) this.geosminViz.draw();
+
+        // Quantum Mirage Overlay (Post-processing)
+        if (this.mirageViz) {
+            this.mirageViz.update({
+                entropy: this.audio ? this.audio.params.entropy : 0.5,
+                flux: this.audio ? this.audio.params.quantumFlux : 0.1
+            });
+            this.mirageViz.draw(this.ctx);
+        }
+
+        // Fractal Echo (Geometric Recursion)
+        if (this.fractalViz) {
+            this.fractalViz.update({
+                recursion: this.audio ? this.audio.params.recursion : 0.1,
+                symmetry: this.audio ? this.audio.params.symmetry : 0.5,
+                divergence: this.audio ? this.audio.params.quantumFlux : 0.1 // Use quantum flux as a jitter source or dedicated param
+            });
+            this.fractalViz.draw(this.ctx);
+        }
+
+        // Celestial Overlays
+        if (this.audio && this.audio.celestialModule) {
+            const celestial = this.audio.celestialModule.getVisualParams();
+            if (celestial && celestial.intensity > 0) {
+                this.ctx.save();
+                this.ctx.globalCompositeOperation = 'screen';
+                const i = celestial.intensity;
+
+                if (celestial.type === 'SOLAR_FLARE') {
+                    this.ctx.fillStyle = `rgba(255, 200, 100, ${i * 0.3})`;
+                    this.ctx.fillRect(0, 0, w, h);
+                } else if (celestial.type === 'LUNAR_ECLIPSE') {
+                    this.ctx.globalCompositeOperation = 'multiply';
+                    this.ctx.fillStyle = `rgba(0, 0, 0, ${i * 0.6})`;
+                    this.ctx.fillRect(0, 0, w, h);
+                } else if (celestial.type === 'MAGNETIC_STORM') {
+                    this.ctx.globalCompositeOperation = 'difference';
+                    this.ctx.fillStyle = `rgba(100, 255, 218, ${i * 0.1})`;
+                    if (Math.random() > 0.8) this.ctx.fillRect(0, 0, w, h);
+                }
+                this.ctx.restore();
+            }
+        }
     }
 }

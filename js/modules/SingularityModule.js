@@ -27,7 +27,7 @@ export default class SingularityModule {
             d.delayTime.value = this.delayTimes[i];
 
             const g = ctx.createGain();
-            g.gain.value = 0.8; // Feedback controlled by update
+            g.gain.value = 0.7 / this.numLines; // Normalized feedback (0.7 safety margin)
 
             const f = ctx.createBiquadFilter();
             f.type = 'lowpass';
@@ -75,7 +75,8 @@ export default class SingularityModule {
         if (params.shimmer !== undefined) this.params.shimmer = params.shimmer;
 
         // Map Void to FDN feedback and filter cutoff
-        const feedback = 0.5 + (this.params.void * 0.45); // 0.5 to 0.95
+        // Normalise by numLines to maintain stability < 1.0 total gain
+        const feedback = (0.5 + (this.params.void * 0.45)) / this.numLines;
         const cutoff = 500 + (this.params.void * 15000); // 500 to 15.5k
 
         this.gains.forEach(g => g.gain.setTargetAtTime(feedback, this.ctx.currentTime, 0.1));

@@ -71,7 +71,8 @@ export default class MagneticModule {
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 80;
+        filter.frequency.setValueAtTime(80, t);
+        filter.frequency.setTargetAtTime(80, t, 0.1);
 
         this.droneOsc.connect(pulseGain);
         pulseGain.connect(filter);

@@ -33,7 +33,8 @@ export default class VolcanoModule {
 
             if (this.ventNodes) {
                 // Modulate hiss focus based on intensity
-                this.ventNodes.hissFilter.frequency.setTargetAtTime(1000 + this.intensity * 2000, t, 1.0);
+                // Modulate hiss focus based on intensity. Floor at 1100 to stay clear of 0Hz with LFO.
+                this.ventNodes.hissFilter.frequency.setTargetAtTime(1100 + this.intensity * 2000, t, 1.0);
                 this.ventNodes.hissLFO.frequency.setTargetAtTime(0.5 + this.intensity * 2, t, 1.0);
             }
         }
@@ -59,7 +60,7 @@ export default class VolcanoModule {
 
         const hissFilter = this.ctx.createBiquadFilter();
         hissFilter.type = 'bandpass';
-        hissFilter.frequency.value = 2000;
+        hissFilter.frequency.value = 2200; // Increased floor for stability
         hissFilter.Q.value = 5.0;
 
         const hissLFO = this.ctx.createOscillator();
@@ -67,7 +68,7 @@ export default class VolcanoModule {
         hissLFO.frequency.value = 1.0;
 
         const hissLFOGain = this.ctx.createGain();
-        hissLFOGain.gain.value = 1000;
+        hissLFOGain.gain.value = 1000; // Swing +/- 1000
 
         hissLFO.connect(hissLFOGain);
         hissLFOGain.connect(hissFilter.frequency);

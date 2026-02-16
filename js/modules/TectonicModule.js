@@ -34,8 +34,8 @@ export default class TectonicModule {
         if (this.droneOsc) {
             this.masterGain.gain.setTargetAtTime(effectiveStress * 0.4, t, 1.0);
 
-            // Modulate resonance frequency based on stress
-            const freq = 20 + effectiveStress * 30;
+            // Modulate resonance frequency based on stress. Floor at 25Hz.
+            const freq = 25 + effectiveStress * 30;
             this.droneOsc.frequency.setTargetAtTime(freq, t, 1.0);
 
             // Random creaking sounds
@@ -98,7 +98,8 @@ export default class TectonicModule {
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(800, t);
+        const freq = Math.max(800, 200 + intensity * 2000);
+        filter.frequency.setTargetAtTime(freq, t, 0.1);
         filter.Q.value = 15;
 
         const gain = this.ctx.createGain();

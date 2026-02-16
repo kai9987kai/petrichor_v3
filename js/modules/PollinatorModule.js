@@ -69,7 +69,8 @@ export default class PollinatorModule {
     updateBeeVoice(voice, beeData) {
         // Panning: beeData.x is 0 to canvas.width
         // StereoPanner.pan is -1 (left) to 1 (right)
-        const pan = (beeData.x / (beeData.canvasWidth || 800)) * 2 - 1;
+        const rawPan = (beeData.x / (beeData.canvasWidth || 800)) * 2 - 1;
+        const pan = Math.max(-1, Math.min(1, rawPan));
         voice.panner.pan.value = pan;
 
         // Pitch varies slightly with movement speed or "effort"

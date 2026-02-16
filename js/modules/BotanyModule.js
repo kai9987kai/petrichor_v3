@@ -213,14 +213,14 @@ export default class BotanyModule {
         gain.gain.setValueAtTime(0, now);
 
         if (plant.type === 'fungi' || plant.type === 'mycelium') {
-            gain.gain.linearRampToValueAtTime(0.3, now + 0.005);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            gain.gain.setTargetAtTime(0.3, now, 0.005);
+            gain.gain.setTargetAtTime(0, now + 0.05, 0.05);
         } else if (plant.type === 'tree') {
-            gain.gain.linearRampToValueAtTime(0.5, now + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            gain.gain.setTargetAtTime(0.5, now, 0.01);
+            gain.gain.setTargetAtTime(0, now + 0.1, 0.2);
         } else {
-            gain.gain.linearRampToValueAtTime(0.4, now + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            gain.gain.setTargetAtTime(0.4, now, 0.02);
+            gain.gain.setTargetAtTime(0, now + 0.1, 0.4);
         }
 
         osc.connect(filter);
@@ -228,7 +228,8 @@ export default class BotanyModule {
         gain.connect(this.masterGain);
 
         osc.start(now);
-        osc.stop(now + 1.6);
+        osc.setTargetAtTime(0, now + 1.5, 0.05); // Smooth decay to stop
+        osc.stop(now + 1.8);
     }
 
     playPlop(fruit) {

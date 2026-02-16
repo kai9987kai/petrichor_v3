@@ -148,7 +148,7 @@ export default class EnvModule {
 
         const env = this.ctx.createGain();
         env.gain.setValueAtTime(p.g, t);
-        env.gain.exponentialRampToValueAtTime(0.001, t + p.d + 0.01);
+        env.gain.setTargetAtTime(0, t + p.d, 0.005);
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
@@ -218,7 +218,7 @@ export default class EnvModule {
         const noiseGain = this.ctx.createGain();
         noiseGain.gain.setValueAtTime(0, t);
         noiseGain.gain.linearRampToValueAtTime(0.12, t + 0.05);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        noiseGain.gain.setTargetAtTime(0, t + 0.1, 0.05);
 
         noise.connect(noiseFilter);
         noiseFilter.connect(noiseGain);
