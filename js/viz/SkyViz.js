@@ -1,0 +1,138 @@
+export default class SkyViz {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+
+        this.stars = [];
+        this.meteors = [];
+        this.auroraActive = false;
+        this.auroraOffset = 0;
+        this.width = 0;
+        this.height = 0;
+
+        this.time = 12;
+        this.wind = 0;
+        this.rain = 0;
+
+        this.initStars();
+    }
+
+    initStars() {
+        this.stars = [];
+        for (let i = 0; i < 200; i++) {
+            this.stars.push({
+                x: Math.random(),
+                y: Math.random() * 0.6,
+                size: Math.random() * 1.5 + 0.5,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: 0.02 + Math.random() * 0.05
+            });
+        }
+    }
+
+    triggerMeteor() {
+        this.meteors.push({
+            x: Math.random() * this.width,
+            y: 0,
+            vx: (Math.random() - 0.5) * 10 + 5,
+            vy: Math.random() * 5 + 5,
+            len: 0,
+            life: 1.0
+        });
+    }
+
+    resize() {
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+    }
+
+    update(params) {
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        this.time = params.time || 12;
+        this.rain = params.rain || 0;
+        this.wind = params.wind || 0;
+
+        const cx = this.width / 2;
+        const cy = this.height * 0.8;
+        const radius = this.width * 0.6;
+
+        // Day/Night Progress
+        // 06:00 -> 18:00 (Sun)
+        let dayProgress = (this.time - 6) / 12;
+        if (dayProgress >= 0 && dayProgress <= 1) {
+            const angle = Math.PI + (dayProgress * Math.PI);
+            const sunX = cx + Math.cos(angle) * radius * 0.8;
+            const sunY = cy + Math.sin(angle) * (radius * 0.4);
+
+            this.ctx.beginPath();
+            this.ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+            this.ctx.fillStyle = '#ffaa00';
+            this.ctx.shadowBlur = 40;
+            this.ctx.shadowColor = '#ffaa00';
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+        }
+
+        // Moon: 18:00 -> 06:00
+        let moonTime = this.time - 18;
+        if (moonTime < 0) moonTime += 24;
+
+        if (moonTime >= 0 && moonTime <= 12) {
+            const moonProgress = moonTime / 12;
+            const angle = Math.PI + (moonProgress * Math.PI);
+            const moonX = cx + Math.cos(angle) * radius * 0.8;
+            const moonY = cy + Math.sin(angle) * (radius * 0.4);
+
+            this.ctx.beginPath();
+            this.ctx.arc(moonX, moonY, 25, 0, Math.PI * 2);
+            this.ctx.fillStyle = '#eeffff';
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = '#ffffff';
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+        }
+
+        this.drawStars();
+        this.drawMeteors();
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.drawStars();
+        this.drawMeteors();
+    }
+
+    drawStars() {
+        this.stars.forEach(s => {
+            s.twinkle += s.speed;
+            const opacity = 0.2 + Math.abs(Math.sin(s.twinkle)) * 0.8;
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            this.ctx.beginPath();
+            this.ctx.arc(s.x * this.width, s.y * this.height, s.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+
+    drawMeteors() {
+        for (let i = this.meteors.length - 1; i >= 0; i--) {
+            const m = this.meteors[i];
+            m.x += m.vx;
+            m.y += m.vy;
+            m.len += 5;
+            m.life -= 0.02;
+
+            if (m.life <= 0) {
+                this.meteors.splice(i, 1);
+                continue;
+            }
+
+            this.ctx.strokeStyle = `rgba(255, 255, 255, ${m.life})`;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(m.x, m.y);
+            this.ctx.lineTo(m.x - m.vx * m.len * 0.1, m.y - m.vy * m.len * 0.1);
+            this.ctx.stroke();
+        }
+    }
+}
